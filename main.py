@@ -4,7 +4,6 @@ import os
 
 import copernicus_api
 import coreg_main
-import logger
 import utils
 
 start_date = datetime.datetime(2024, 1, 1)
@@ -12,9 +11,6 @@ end_date = datetime.datetime.now()
 mosaicing = False  # Set to False if calculation should be done on a tile-by-tile basis, True if it should be mosaiced beforehand
 base_path = '/mnt/d/SATROMO/AROSICS_Coregistration/AROSICS/assets/'
 base_path_suffix = 'S2'
-
-log_file_path = os.path.join(base_path, 'base_data', 'log.csv')
-logger = logger.setup_logger(log_file_path)
 
 dates = [start_date + datetime.timedelta(days=i) for i in range((end_date - start_date).days + 1)]
 
