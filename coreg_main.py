@@ -1,9 +1,11 @@
 # Import necessary libraries
+import glob
 import os
 
 import numpy as np
 from arosics import COREG_LOCAL
-from osgeo import gdal
+from osgeo import gdal, gdalconst
+from scipy.interpolate import interp2d
 
 import utils
 
@@ -40,8 +42,9 @@ def S2_mosaic_scenes(base_path, acquisition_date, rel_orbit):
             # Check if the file is in UTM32
             if utils.get_epsg(file) != 32632:
                 # Warp the file to UTM32 using GDALWARP
+                gsd_x, gsd_y = utils.get_pixel_spacing(file)
                 os.system(
-                    f'gdalwarp -q -ot UInt16 -s_srs EPSG:{utils.get_epsg(file)} -t_srs EPSG:32632 -overwrite -srcnodata 0 -dstnodata 0 -co COMPRESS=DEFLATE -co PREDICTOR=2 -co NUM_THREADS=ALL_CPUS -co BIGTIFF=YES {file} {file.replace(".jp2", "_utm32.tif")}')
+                    f'gdalwarp -tap -tr {gsd_x} {gsd_y} -q -ot UInt16 -s_srs EPSG:{utils.get_epsg(file)} -t_srs EPSG:32632 -overwrite -srcnodata 0 -dstnodata 0 -co COMPRESS=DEFLATE -co PREDICTOR=2 -co NUM_THREADS=ALL_CPUS -co BIGTIFF=YES {file} {file.replace(".jp2", "_utm32.tif")}')
                 files_present_b04_utm32.append(file.replace('.jp2', '_utm32.tif'))
             else:
                 files_present_b04_utm32.append(file)
@@ -51,13 +54,15 @@ def S2_mosaic_scenes(base_path, acquisition_date, rel_orbit):
         os.system(
             f'gdalbuildvrt -allow_projection_difference -q -srcnodata 0 {b04_path_out}.vrt {" ".join(files_present_b04_utm32)}')
 
-        # Mosaic the B04 files using GDALWARP
-        print(f'\t- Mosaiking ({os.path.basename(b04_path_out)}.tif)')
-        os.system(
-            f'gdalwarp -tr 10 10 -r near -tap -q -ot UInt16 -t_srs EPSG:32632 -overwrite -srcnodata 0 -dstnodata 0 -co COMPRESS=DEFLATE -co PREDICTOR=2 -co NUM_THREADS=ALL_CPUS -co BIGTIFF=YES {b04_path_out}.vrt {b04_path_out}.tif')
+        ## Mosaic the B04 files using GDALWARP
+        # print(f'\t- Mosaiking ({os.path.basename(b04_path_out)}.tif)')
+        # pixel_spacing_x, pixel_spacing_y = utils.get_pixel_spacing(files_present_b04[0])
+        # os.system(
+        #     f'gdalwarp -tr {pixel_spacing_x} {pixel_spacing_y} -r near -tap -q -ot UInt16 -t_srs EPSG:32632 -overwrite -srcnodata 0 -dstnodata 0 -co COMPRESS=DEFLATE -co PREDICTOR=2 -co NUM_THREADS=ALL_CPUS -co BIGTIFF=YES {b04_path_out}.vrt {b04_path_out}.tif')
 
-        # Remove the intermediate UTM32 files
-        os.system(f'rm {" ".join(glob.glob(os.path.join(base_path, extract_path, "*_utm32.tif")))}')
+        ## Remove the intermediate UTM32 files
+        # if len(glob.glob(os.path.join(base_path, extract_path, "*_utm32.tif"))) > 0:
+        #    os.system(f'rm {" ".join(glob.glob(os.path.join(base_path, extract_path, "*_utm32.tif")))}')
 
     # Check if the cloud mosaic is missing
     if not os.path.exists(f'{cld_path_out}.tif'):
@@ -81,16 +86,15 @@ def S2_mosaic_scenes(base_path, acquisition_date, rel_orbit):
         os.system(
             f'gdalbuildvrt -q -allow_projection_difference -q -srcnodata 0 {cld_path_out}.vrt {" ".join(files_present_cld_utm32)}')
 
-        # Mosaic the cloud files using GDALWARP
-        print(f'\t- Mosaiking ({os.path.basename(cld_path_out)}.tif)')
-        os.system(
-            f'gdalwarp -tr 10 10 -r near -tap -q -ot Byte -t_srs EPSG:32632 -overwrite -srcnodata 0 -dstnodata 0 -co COMPRESS=DEFLATE -co PREDICTOR=2 -co NUM_THREADS=ALL_CPUS {cld_path_out}.vrt {cld_path_out}.tif')
+        ## Mosaic the cloud files using GDALWARP
+        # print(f'\t- Mosaiking ({os.path.basename(cld_path_out)}.tif)')
+        # pixel_spacing_x, pixel_spacing_y = utils.get_pixel_spacing(files_present_b04[0])
+        # os.system(
+        #     f'gdalwarp -tr {pixel_spacing_x} {pixel_spacing_y} -r near -tap -q -ot Byte -t_srs EPSG:32632 -overwrite -srcnodata 0 -dstnodata 0 -co COMPRESS=DEFLATE -co PREDICTOR=2 -co NUM_THREADS=ALL_CPUS {cld_path_out}.vrt {cld_path_out}.tif')
 
-        # Remove the intermediate UTM32 files
-        os.system(f'rm {" ".join(glob.glob(os.path.join(base_path, extract_path, "*_utm32.tif")))}')
 
     # Return the paths to the mosaicked B04 and cloud rasters
-    return f'{b04_path_out}.tif', f'{cld_path_out}.tif'
+    return f'{b04_path_out}.vrt', f'{cld_path_out}.vrt'
 
 
 def get_extent_and_dimensions(filepath):
@@ -137,14 +141,16 @@ def resample_raster(src_filename, match_filename, dst_filename):
     # Create a temporary file to change the resolution
     temp_filename = "/tmp/temp.tif"
     res = match_geotrans[1]
-    os.system(f'gdalwarp -tr {res} {res} -tap {src_filename} {temp_filename}')
+    os.system(
+        f'gdalwarp -overwrite -q -tr {res} {res} -tap -co COMPRESS=DEFLATE -co PREDICTOR=2 {src_filename} {temp_filename}')
 
     # Now cut the temporary file to match the extent of the match file
     os.system(
-        f'gdalwarp -te {match_geotrans[0]} {match_geotrans[3] - high * res} {match_geotrans[0] + wide * res} {match_geotrans[3]} -dstnodata 0 {temp_filename} {dst_filename}')
+        f'gdalwarp -overwrite -q -te {match_geotrans[0]} {match_geotrans[3] - high * res} {match_geotrans[0] + wide * res} {match_geotrans[3]} -dstnodata 0 -co COMPRESS=DEFLATE -co PREDICTOR=2 {temp_filename} {dst_filename}')
 
     # Remove the temporary file
     os.system(f'rm {temp_filename}')
+    return dst_filename
 
 
 def equalize_extents(im_reference, im_target):
@@ -174,13 +180,14 @@ def equalize_extents(im_reference, im_target):
 
     # If the extents are not equal, crop the reference image to the target image size
     print('Cropping Reference Image to Target Image Size')
-    kwargs = {"format": "GTiff", "outputBounds": [minx_target, miny_target, maxx_target, maxy_target]}
-    with gdal.Warp(outputFile, im_reference, **kwargs) as ds:
-        pass
+    gsd_x, gsd_y = utils.get_pixel_spacing(im_target)
+    kwargs = {"format": "GTiff", "outputBounds": [minx_target, miny_target, maxx_target, maxy_target], "xRes": gsd_x,
+              "yRes": gsd_y, "targetAlignedPixels": True}
+    gdal.Warp(outputFile, im_reference, **kwargs)
     return outputFile
 
 
-def shifts_to_tif(CRL, outfolder=None):
+def shifts_to_tif(CRL, outfolder=None, mosaicing=False):
     """
     This function stores X- and Y-Offsets as geotifs.
 
@@ -192,7 +199,7 @@ def shifts_to_tif(CRL, outfolder=None):
     None
     """
     from osgeo import gdal
-    options = ['COMPRESS=DEFLATE', 'PREDICTOR=2']
+    options = ['COMPRESS=DEFLATE', 'PREDICTOR=2', 'BIGTIFF=YES']
 
     # If outfolder is not provided, set it to the directory of the output file
     if outfolder is None:
@@ -239,7 +246,24 @@ def shifts_to_tif(CRL, outfolder=None):
     else:
         # Calculate the X shifts
         print('Calculating X-Shifts')
-        x_shifts = CRL.tiepoint_grid.to_interpolated_raster(metric='X_SHIFT_PX')
+        if mosaicing:
+            CRL.tiepoint_grid.CoRegPoints_table.X_SHIFT_M = CRL.tiepoint_grid.CoRegPoints_table.X_SHIFT_M.astype(
+                'float32')
+            # Creating synthetic CRL with lowered gsd to minimize RAM requirement
+            CRL_tmp, CRL_backup = utils.change_resolution_CRL(CRL, gsd_new=20)
+            x_shifts = CRL_tmp.tiepoint_grid.to_interpolated_raster(metric='X_SHIFT_M', lowres_spacing=5)
+            # Resampling the intermediary raster to the original resolution
+            ## Create an interpolation function
+            interp_func = interp2d(np.arange(x_shifts.shape[1]), np.arange(x_shifts.shape[0]), x_shifts, kind='cubic')
+
+            # Evaluate the interpolation function at the new coordinates
+            CRL_tmp = utils.change_resolution_CRL(CRL, backup=CRL_backup)
+            x_new = np.linspace(0, x_shifts.shape[1], CRL_tmp.tiepoint_grid.shift.arr.shape[1])
+            y_new = np.linspace(0, x_shifts.shape[0], CRL_tmp.tiepoint_grid.shift.arr.shape[0])
+            x_shifts = np.int16(1000 * interp_func(x_new, y_new))
+
+        else:
+            x_shifts = CRL.tiepoint_grid.to_interpolated_raster(metric='X_SHIFT_M')
 
         # Open the input file
         with gdal.Open(CRL.im2shift.filePath) as ds:
@@ -254,17 +278,36 @@ def shifts_to_tif(CRL, outfolder=None):
             # Create a new geotiff file for the X shifts
             driver = gdal.GetDriverByName('GTiff')
             outDs = driver.Create(os.path.join(outfolder, os.path.basename(CRL.path_out).replace('.tif', '_dx.tif')),
-                                  cols, rows, 1, gdal.GDT_Float32, options)
+                                  cols, rows, 1, gdal.GDT_Int16, options)
             outDs.SetGeoTransform(geotransform)
             outDs.SetProjection(projection)
             band = outDs.GetRasterBand(1)
             print('Writing X Shifts')
             band.WriteArray(x_shifts)
+            outDs = None
             del x_shifts
 
         # Calculate the Y shifts
-        print('Calculating Y-Shifts')
-        y_shifts = CRL.tiepoint_grid.to_interpolated_raster(metric='Y_SHIFT_PX')
+        print('Calculating Y Shifts')
+        if mosaicing:
+            CRL.tiepoint_grid.CoRegPoints_table.Y_SHIFT_M = CRL.tiepoint_grid.CoRegPoints_table.Y_SHIFT_M.astype(
+                'float32')
+            # Creating synthetic CRL with lowered gsd to minimize RAM requirement
+            CRL_tmp, CRL_backup = utils.change_resolution_CRL(CRL, gsd_new=20)
+            y_shifts = CRL_tmp.tiepoint_grid.to_interpolated_raster(metric='Y_SHIFT_M', lowres_spacing=5)
+
+            # Resampling the intermediary raster to the original resolution
+            ## Create an interpolation function
+            interp_func = interp2d(np.arange(y_shifts.shape[1]), np.arange(y_shifts.shape[0]), y_shifts, kind='cubic')
+
+            # Evaluate the interpolation function at the new coordinates
+            CRL_tmp = utils.change_resolution_CRL(CRL, backup=CRL_backup)
+            x_new = np.linspace(0, y_shifts.shape[1], CRL_tmp.tiepoint_grid.shift.arr.shape[1])
+            y_new = np.linspace(0, y_shifts.shape[0], CRL_tmp.tiepoint_grid.shift.arr.shape[0])
+            y_shifts = np.int16(1000 * interp_func(x_new, y_new))
+
+        else:
+            y_shifts = CRL.tiepoint_grid.to_interpolated_raster(metric='Y_SHIFT_M')
 
         # Open the input file
         with gdal.Open(CRL.im2shift.filePath) as ds:
@@ -279,14 +322,14 @@ def shifts_to_tif(CRL, outfolder=None):
             # Create a new geotiff file for the Y shifts
             driver = gdal.GetDriverByName('GTiff')
             outDs = driver.Create(os.path.join(outfolder, os.path.basename(CRL.path_out).replace('.tif', '_dy.tif')),
-                                  cols, rows, 1, gdal.GDT_Float32, options)
+                                  cols, rows, 1, gdal.GDT_Int16, options)
             outDs.SetGeoTransform(geotransform)
             outDs.SetProjection(projection)
             band = outDs.GetRasterBand(1)
             print('Writing Y Shifts')
             band.WriteArray(y_shifts)
+            outDs = None
             del y_shifts
-
 
 def coregister_S2(file_path_in, cld_mask_path_in, folder_path_out, cloud_threshold=65, mosaicing=False):
     """
@@ -308,7 +351,7 @@ def coregister_S2(file_path_in, cld_mask_path_in, folder_path_out, cloud_thresho
 
     # Set output cloud mask path based on mosaicing flag
     if mosaicing:
-        cld_mask_path_out = cld_mask_path_in.replace(".jp2", "_bin.tif")
+        cld_mask_path_out = cld_mask_path_in.replace(".vrt", "_bin.tif")
     else:
         cld_mask_path_out = cld_mask_path_in.replace(".tif", "_bin.tif")
 
@@ -320,7 +363,7 @@ def coregister_S2(file_path_in, cld_mask_path_in, folder_path_out, cloud_thresho
 
     # Set output file name and folder based on mosaicing flag
     if mosaicing:
-        out_name = os.path.basename(file_path_in).replace('B04', 'registration_swiss')
+        out_name = os.path.basename(file_path_in).replace('B04', 'registration_swiss').replace('vrt', 'tif')
     else:
         out_name = os.path.basename(file_path_in).replace('B04', 'registration_swiss').replace('jp2', 'tif')
     out_folder = os.path.join(folder_path_out, f'TiePoint_GridRes_{grid_res}x{grid_res}px')
@@ -332,7 +375,30 @@ def coregister_S2(file_path_in, cld_mask_path_in, folder_path_out, cloud_thresho
         os.path.join(out_folder, out_name.replace(".tif", "_dy.tif"))):
 
         # Convert cloud probability to cloud mask
-        # ( commented out for brevity )
+        if os.path.exists(cld_mask_path_out):
+            gsd_b04 = utils.get_pixel_spacing(im_target)
+            gsd_cld = utils.get_pixel_spacing(cld_mask_path_out)
+            if not os.path.exists(cld_mask_path_out.replace(f'-{gsd_cld[0]:0.0f}m_', f'-{gsd_b04[0]:0.0f}m_')):
+                cld_mask_path_out = resample_raster(cld_mask_path_out, im_target,
+                                                    cld_mask_path_out.replace(f'-{gsd_cld[0]:0.0f}m_',
+                                                                              f'-{gsd_b04[0]:0.0f}m_'))
+            else:
+                cld_mask_path_out = cld_mask_path_out.replace(f'-{gsd_cld[0]:0.0f}m_', f'-{gsd_b04[0]:0.0f}m_')
+        else:
+            print(f'\t- Converting Cloud Probability to Cloud Mask (≥{cloud_threshold}%)')
+            os.system(
+                f'gdal_calc.py -A {cld_mask_path_in} --overwrite --outfile={cld_mask_path_out} --calc="logical_and(A>={cloud_threshold}, A<=100)" --type=Byte --NoDataValue=0 --co COMPRESS=DEFLATE --co PREDICTOR=2 --co NUM_THREADS=ALL_CPUS --quiet')
+
+            # Remove the intermediate UTM32 files
+            if len(glob.glob(os.path.join(os.path.dirname(cld_mask_path_in), "*CLDPRB*_utm32.tif"))) > 0:
+                os.system(
+                    f'rm {" ".join(glob.glob(os.path.join(os.path.dirname(cld_mask_path_in), "*CLDPRB*_utm32.tif")))}')
+
+            gsd_b04 = utils.get_pixel_spacing(im_target)
+            gsd_cld = utils.get_pixel_spacing(cld_mask_path_out)
+            cld_mask_path_out = resample_raster(cld_mask_path_out, im_target,
+                                                cld_mask_path_out.replace(f'-{gsd_cld[0]:0.0f}m_',
+                                                                          f'-{gsd_b04[0]:0.0f}m_'))
 
         # Set reference image path
         im_reference = '/mnt/d/SATROMO/AROSICS_Coregistration/AROSICS/assets/base_data/S2_GRI.tif'
@@ -346,16 +412,28 @@ def coregister_S2(file_path_in, cld_mask_path_in, folder_path_out, cloud_thresho
         # Equalize extents of reference and target images
         im_reference_masked = equalize_extents(im_reference, im_target)
 
+        # Limiting number of CPU threads to mitigate risk of out-of-memory error if using a mosaic
+        if mosaicing:
+            file_count = len(
+                glob.glob(os.path.join(folder_path_out, 'S2*_MSIL2A_*_B04*10m.jp2')))  # Finding number of tiles
+            num_cpus = utils.determine_cores(file_count)
+            # num_cpus = 24 +
+        else:
+            num_cpus = max(os.cpu_count() - 1, 1)
+
         # Define coregistration arguments
         kwargs = {
             'grid_res': grid_res,
             'path_out': f'{out_name}',
+            #'path_out': None, # Coregistered image not written
             'projectDir': out_folder,
             'q': False,
             'nodata': (0, 0),
-            # 'mask_baddata_tgt': cld_mask_path_out,
-            'CPUs': max(os.cpu_count() - 1, 1),
+            'mask_baddata_tgt': cld_mask_path_out,
+            'out_crea_options': ['COMPRESS=DEFLATE', 'PREDICTOR=2'],
+            'CPUs': num_cpus,
             'progress': False,
+            'nodata': [0, 0],
         }
 
         # Perform coregistration
@@ -366,7 +444,7 @@ def coregister_S2(file_path_in, cld_mask_path_in, folder_path_out, cloud_thresho
                 path_out=os.path.join(folder_path_out, f'TiePoint_GridRes_{grid_res}x{grid_res}px',
                                       out_name.replace(".tif", ".shp")))
 
-        shifts_to_tif(CRL)
+        shifts_to_tif(CRL, mosaicing=mosaicing)
 
         print('=' * len(title_str))
 

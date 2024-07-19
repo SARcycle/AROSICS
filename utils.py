@@ -1,3 +1,6 @@
+import coreg_main
+
+
 def get_credentials(tag):
     """
     Retrieves the username and password from the credentials file based on the provided tag.
@@ -87,6 +90,31 @@ def get_epsg(tif_file):
     return int(epsg_code)
 
 
+def get_pixel_spacing(file_path):
+    from osgeo import gdal
+    import numpy as np
+
+    # Open the raster file
+    ds = gdal.Open(file_path)
+
+    # Check if the file was opened successfully
+    if ds is None:
+        raise RuntimeError(f"Failed to open file: {file_path}")
+
+    try:
+        # Get the geotransform
+        gt = ds.GetGeoTransform()
+
+        # Get the pixel spacing (x and y directions)
+        pixel_spacing_x = np.round(gt[1])
+        pixel_spacing_y = np.round(-gt[5])
+
+        return pixel_spacing_x, pixel_spacing_y
+    finally:
+        # Close the dataset to free up memory
+        ds = None
+
+
 def extract_value_from_xml(file_path, key):
     """
     Extracts a value from an XML file based on a key.
@@ -111,3 +139,69 @@ def extract_value_from_xml(file_path, key):
             return float(elem.text)
     # Return None if the key is not found
     return None
+
+
+def change_resolution_CRL(CRL, gsd_new=None, backup=None):
+    """
+    Changes the resolution within the CRL.tiepoint_grid.shift to a different GSD to minimize requirement in the interpolation step.
+    CAUTION: since CRL.tiepoint_grid.shift is mutable, changes to CRL_tmp are also reflected in the original CRL -> only a reference, not a copy.
+
+
+    Args:
+        CRL: AROSICS COREG object.
+        gsd (int/float): The desired gsd.
+        backup: a backup of the changed parameters to be reinstated
+
+    Returns:
+        CRL: AROSICS COREG object.
+        backup: a backup of the changed parameters to be saved
+    """
+    import copy
+    import numpy as np
+
+    class coreg_backup:
+        def __init__(self, CRL):
+            self.arr = copy.deepcopy(CRL.tiepoint_grid.shift.arr)
+            self.geotransform = copy.deepcopy(CRL.tiepoint_grid.shift.geotransform)
+            self.GCPList = []
+            for gcp in CRL.tiepoint_grid.GCPList:
+                self.GCPList.append([gcp.GCPLine, gcp.GCPPixel])
+            self.CoRegPoints_table = copy.deepcopy(CRL.tiepoint_grid.CoRegPoints_table)
+
+    if backup is None:
+        backup = coreg_backup(CRL=CRL)
+        img_dims = coreg_main.get_extent_and_dimensions(CRL.im2shift.filePath)
+        gsd_old = CRL.tiepoint_grid.shift.geotransform[1]
+        CRL.tiepoint_grid.shift.arr = np.zeros(
+            (len(np.arange(img_dims[0], img_dims[1], gsd_new)), len(np.arange(img_dims[2], img_dims[3], gsd_new))),
+            dtype=CRL.tiepoint_grid.shift.dtype)
+        CRL.tiepoint_grid.shift.geotransform[1] = gsd_new
+        CRL.tiepoint_grid.shift.geotransform[5] = -1 * gsd_new
+        for gcp in CRL.tiepoint_grid.GCPList:
+            gcp.GCPPixel = np.round(gcp.GCPPixel / (gsd_new / gsd_old))
+            gcp.GCPLine = np.round(gcp.GCPLine / (gsd_new / gsd_old))
+        CRL.tiepoint_grid.CoRegPoints_table.X_IM = np.round(
+            CRL.tiepoint_grid.CoRegPoints_table.X_IM / (gsd_new / gsd_old))
+        CRL.tiepoint_grid.CoRegPoints_table.Y_IM = np.round(
+            CRL.tiepoint_grid.CoRegPoints_table.Y_IM / (gsd_new / gsd_old))
+        return CRL, backup
+
+    else:
+        CRL.tiepoint_grid.shift.arr = copy.deepcopy(backup.arr)
+        CRL.tiepoint_grid.shift.geotransform = copy.deepcopy(backup.geotransform)
+        for gcp_orig, gcp_backup in zip(CRL.tiepoint_grid.GCPList, backup.GCPList):
+            gcp_orig.GCPLine = gcp_backup[0]
+            gcp_orig.GCPPixel = gcp_backup[1]
+        CRL.tiepoint_grid.CoRegPoints_table = backup.CoRegPoints_table
+        return CRL
+
+
+def determine_cores(tiles):
+    import os
+    # If there are four tiles or less use all cores
+    if tiles <= 4:
+        return os.cpu_count() - 1
+    elif tiles >= 12:
+        return min(24, os.cpu_count() - 1)
+    else:
+        return min(int((tiles - 4) / (12 - 4) * (24 - os.cpu_count()) + os.cpu_count()), os.cpu_count() - 1)
