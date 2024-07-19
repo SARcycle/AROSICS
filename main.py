@@ -8,9 +8,8 @@ import coreg_main
 import utils
 
 # Define start and end dates for the data processing
-start_date = datetime.datetime(2024, 1, 1)
+start_date = datetime.datetime(2023, 11, 1)
 end_date = datetime.datetime.now()
-
 
 # Set mosaicing flag to False for tile-by-tile processing or True for mosaicing
 mosaicing = True

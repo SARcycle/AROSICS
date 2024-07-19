@@ -173,8 +173,8 @@ def change_resolution_CRL(CRL, gsd_new=None, backup=None):
         img_dims = coreg_main.get_extent_and_dimensions(CRL.im2shift.filePath)
         gsd_old = CRL.tiepoint_grid.shift.geotransform[1]
         CRL.tiepoint_grid.shift.arr = np.zeros(
-            (len(np.arange(img_dims[0], img_dims[1], gsd_new)), len(np.arange(img_dims[2], img_dims[3], gsd_new))),
-            dtype=CRL.tiepoint_grid.shift.dtype)
+            (len(np.arange(img_dims[2], img_dims[3], gsd_new)), len(np.arange(img_dims[0], img_dims[1], gsd_new))),
+            dtype=CRL.tiepoint_grid.shift.dtype)  # First y direction, then x direction
         CRL.tiepoint_grid.shift.geotransform[1] = gsd_new
         CRL.tiepoint_grid.shift.geotransform[5] = -1 * gsd_new
         for gcp in CRL.tiepoint_grid.GCPList:
@@ -184,6 +184,10 @@ def change_resolution_CRL(CRL, gsd_new=None, backup=None):
             CRL.tiepoint_grid.CoRegPoints_table.X_IM / (gsd_new / gsd_old))
         CRL.tiepoint_grid.CoRegPoints_table.Y_IM = np.round(
             CRL.tiepoint_grid.CoRegPoints_table.Y_IM / (gsd_new / gsd_old))
+        CRL.tiepoint_grid.CoRegPoints_table.X_SHIFT_PX = np.round(
+            CRL.tiepoint_grid.CoRegPoints_table.X_SHIFT_PX / (gsd_new / gsd_old))
+        CRL.tiepoint_grid.CoRegPoints_table.Y_SHIFT_PX = np.round(
+            CRL.tiepoint_grid.CoRegPoints_table.Y_SHIFT_PX / (gsd_new / gsd_old))
         return CRL, backup
 
     else:
@@ -201,7 +205,7 @@ def determine_cores(tiles):
     # If there are four tiles or less use all cores
     if tiles <= 4:
         return os.cpu_count() - 1
-    elif tiles >= 12:
+    elif tiles >= 11:
         return min(24, os.cpu_count() - 1)
     else:
-        return min(int((tiles - 4) / (12 - 4) * (24 - os.cpu_count()) + os.cpu_count()), os.cpu_count() - 1)
+        return min(int((tiles - 4) / (11 - 4) * (24 - os.cpu_count()) + os.cpu_count()), os.cpu_count() - 1)
