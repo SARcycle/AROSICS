@@ -245,7 +245,7 @@ def shifts_to_tif(CRL, outfolder=None, mosaicing=False):
             del x_shifts
     else:
         # Calculate the X shifts
-        print('Calculating X-Shifts')
+        print('Calculating X Shifts')
         if mosaicing:
             CRL.tiepoint_grid.CoRegPoints_table.X_SHIFT_M = CRL.tiepoint_grid.CoRegPoints_table.X_SHIFT_M.astype(
                 'float32')

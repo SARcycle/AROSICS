@@ -31,7 +31,7 @@ def image_search(start_date, end_date):
 
     # Read the geospatial data
     gdf = gpd.read_file(
-        "/mnt/d/SATROMO/AROSICS_Coregistration/AROSICS/assets/base_data/swissBOUNDARIES3D_1_5_LV95_LN02_buffered_5000m_simplified_DP_5000m.gpkg",
+        "/mnt/d/SATROMO/AROSICS_Coregistration/AROSICS/assets/base_data/swissBOUNDARIES3D_1_5_WGS84_buffered_5000m_simplified_DP_5000m.gpkg",
         layer="bbox",
     )
     aoi = gdf["geometry"][0]
