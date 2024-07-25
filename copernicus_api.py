@@ -42,7 +42,9 @@ def image_search(start_date, end_date):
         f"$filter=Collection/Name eq '{data_collection}' "
         f"and OData.CSC.Intersects(area=geography'SRID=4326;{aoi}') "
         f"and ContentDate/Start gt {start_date}T00:00:00.000Z "
-        f"and ContentDate/Start lt {end_date}T00:00:00.000Z&$top=1000"
+        f"and ContentDate/Start lt {end_date}T00:00:00.000Z "
+        f"and not contains(Name,%27_N9999_%27)"
+        f"&$top=1000"
     )
 
     # Fetch data from the API
