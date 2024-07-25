@@ -1,6 +1,7 @@
 import datetime
 import glob
 import os
+import time
 
 import copernicus_api
 import coreg_main
@@ -24,6 +25,7 @@ dates = [start_date + datetime.timedelta(days=i) for i in range((end_date - star
 # Iterate over the dates
 for date in dates:
     try:
+        start = time.time()
         # Print a header for the current date
         str = f'{date.strftime("%Y-%m-%d %H:%M:%S")} - {(date + datetime.timedelta(days=1) - datetime.timedelta(seconds=1)).strftime("%Y-%m-%d %H:%M:%S")}'
         print("=" * len(str))
@@ -127,5 +129,7 @@ for date in dates:
                                                               f'{acquisition_date.strftime("%Y%m%d")}'),
                                                  cloud_threshold=65,
                                                  mosaicing=mosaicing)
+        print(
+            f'Total processing time for {datetime.datetime.strftime(date, "%Y/%m/%d")}: {datetime.timedelta(seconds=round(time.time() - start))}')
     except:
         print(f'!!!!!!!!!!!! Error on {datetime.datetime.strftime(date, "%Y/%m/%d")} !!!!!!!!!!!!')
