@@ -58,10 +58,15 @@ def image_search(start_date, end_date):
     scene_names = [
         d["Name"] for d in json["value"] if "Name" in d and proc_lvl in d.get("Name", "")
     ]
+    # Returns Checksum (if present), otherwise False (applies for products before 2023)
     checksums = [
-        d["Checksum"][0]["Value"]
+        d["Checksum"][0].get("Value", False) if "Checksum" in d and d["Checksum"] else False
         for d in json["value"]
-        if "Checksum" in d and proc_lvl in d.get("Name", "")
+        if proc_lvl in d.get("Name", "")
+    ]
+    # Returns the length of the file in bytes. Useful as secondary check if checksum is not available
+    content_lengths = [
+        d["ContentLength"] for d in json["value"] if "ContentLength" in d and proc_lvl in d.get("Name", "")
     ]
     rel_orbits = [int(scene_name.split("_")[4].lstrip("R")) for scene_name in scene_names if
                   len(scene_name.split("_")) >= 5]
@@ -75,6 +80,7 @@ def image_search(start_date, end_date):
             "relative_orbit": rel_orbits[i],
             "scene_name": scene_names[i],
             "checksum": checksums[i],
+            "content_length": content_lengths[i]
         }
 
     return search_result
@@ -200,7 +206,18 @@ def S2_scene_download(base_path, start_date=None, end_date=None, search_result=N
                     token = get_access_token()
                 iteration += 1
                 os.system(f'wget -q --header "Authorization: Bearer {token}" \'{url}\' -O {save_path}')
-                checksum_check = calculate_md5(save_path) == value["checksum"]
+                if value["checksum"]:  # If a checksum value has been provided by the API
+                    checksum_check = calculate_md5(save_path) == value["checksum"]
+                elif value["content_length"] != 0:
+                    checksum_check = os.path.getsize(save_path) == value["content_length"]
+                else:  # If neither checksum nor contentlength have been provided -> Check zip file
+                    import zipfile
+                    try:
+                        with zipfile.ZipFile(save_path) as zf:
+                            zf.testzip()
+                            checksum_check = True
+                    except zipfile.BadZipFile:
+                        checksum_check = False
 
             if checksum_check:
                 # Extract the required files

@@ -1,15 +1,15 @@
 import datetime
 import glob
 import os
-import time
 
 import copernicus_api
 import coreg_main
 import utils
 
 # Define start and end dates for the data processing
-start_date = datetime.datetime(2023, 11, 1)
-end_date = datetime.datetime.now()
+start_date = datetime.datetime(2023, 1, 1)
+end_date = datetime.datetime(2023, 8, 22)
+# end_date = datetime.datetime.now()
 
 # Set mosaicing flag to False for tile-by-tile processing or True for mosaicing
 mosaicing = True
@@ -84,13 +84,11 @@ for date in dates:
                     # Mosaic the scenes
                     b04_file_path_tmp, cld_file_path_tmp = coreg_main.S2_mosaic_scenes(
                         os.path.join(base_path, base_path_suffix), acquisition_date, relative_orbit)
-                    start = time.time()
                     coreg_main.coregister_S2(b04_file_path_tmp, cld_file_path_tmp,
                                              os.path.join(os.path.join(base_path, base_path_suffix),
                                                           f'R{relative_orbit:03}',
                                                           f'{acquisition_date.strftime("%Y%m%d")}'), cloud_threshold=65,
                                              mosaicing=mosaicing)
-                    print(f'Time for calculating/writing shifts: {time.time() - start} sec')
                 else:
                     # Process each tile individually
                     for idx in range(len(s2_b04_tiles)):

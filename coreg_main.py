@@ -32,7 +32,7 @@ def S2_mosaic_scenes(base_path, acquisition_date, rel_orbit):
     cld_path_out = os.path.join(extract_path, f'S2-L2A-mosaic_{acquisition_date.strftime("%Y-%m-%dT%H%M%S")}_cloud-20m')
 
     # Check if the B04 mosaic is missing
-    if not os.path.exists(f'{b04_path_out}.tif'):
+    if not os.path.exists(f'{b04_path_out}.vrt'):
         # Get the list of B04 files present in the extract path
         files_present_b04 = glob.glob(os.path.join(base_path, extract_path, '*_B04_10m.jp2'))
 
@@ -65,7 +65,7 @@ def S2_mosaic_scenes(base_path, acquisition_date, rel_orbit):
         #    os.system(f'rm {" ".join(glob.glob(os.path.join(base_path, extract_path, "*_utm32.tif")))}')
 
     # Check if the cloud mosaic is missing
-    if not os.path.exists(f'{cld_path_out}.tif'):
+    if not os.path.exists(f'{cld_path_out}.vrt'):
         # Get the list of cloud files present in the extract path
         files_present_cld = glob.glob(os.path.join(base_path, extract_path, '*_MSK_CLDPRB_20m.jp2'))
 
