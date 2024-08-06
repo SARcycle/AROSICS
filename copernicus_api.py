@@ -155,7 +155,7 @@ def S2_scene_download(base_path, start_date=None, end_date=None, search_result=N
     elif end_date is None:
         end_date = datetime.now()
         print('No end date provided. Defaulting to current date.')
-    else:
+    if search_result is None:
         # Disable insecure request warnings
         requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
@@ -292,7 +292,7 @@ def clean_search_result(search_result, base_path):
         # Check if the tile is already downloaded
         if os.path.exists(os.path.join(extract_path,
                                        f'{value["scene_name"].replace(".SAFE", "_B04_10m.jp2")}')) and os.path.exists(
-            os.path.join(extract_path, f'{value["scene_name"].replace(".SAFE", "_B04_10m.jp2")}')):
+            os.path.join(extract_path, f'{value["scene_name"].replace(".SAFE", "_MSK_CLDPRB_20m.jp2")}')):
             tiles_present.append(key)
 
     # Print the number of already downloaded tiles

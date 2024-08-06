@@ -189,7 +189,7 @@ def equalize_extents(im_reference, im_target):
 
 def shifts_to_tif(CRL, outfolder=None, mosaicing=False):
     """
-    This function stores X- and Y-Offsets as geotifs.
+    This function stores X- and Y-Offsets as geotiffs.
 
     Parameters:
     CRL (object): An object containing information about the coregistration.

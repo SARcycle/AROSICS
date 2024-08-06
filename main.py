@@ -8,7 +8,7 @@ import coreg_main
 import utils
 
 # Define start and end dates for the data processing
-start_date = datetime.datetime(2019, 1, 1)
+start_date = datetime.datetime(2018, 1, 1)
 # end_date = datetime.datetime(2021, 7, 31)
 end_date = datetime.datetime.now()
 
