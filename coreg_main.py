@@ -209,8 +209,8 @@ def shifts_to_tif(CRL, outfolder=None, mosaicing=False):
     if not os.path.exists(outfolder):
         os.makedirs(outfolder)
 
-    # Check if there are no valid GCPs
-    if len(CRL.coreg_info['GCPList']) == 0:
+    # Check if there are less than 30 valid GCPs
+    if len(CRL.coreg_info['GCPList']) < 30:
         # Open the input file
         with gdal.Open(CRL.im2shift.filePath) as ds:
             # Get the number of columns and rows
@@ -260,7 +260,7 @@ def shifts_to_tif(CRL, outfolder=None, mosaicing=False):
             CRL_tmp = utils.change_resolution_CRL(CRL, backup=CRL_backup)
             x_new = np.linspace(0, x_shifts.shape[1], CRL_tmp.tiepoint_grid.shift.arr.shape[1])
             y_new = np.linspace(0, x_shifts.shape[0], CRL_tmp.tiepoint_grid.shift.arr.shape[0])
-            x_shifts = np.int16(1000 * interp_func(x_new, y_new))
+            x_shifts = np.int16(100 * interp_func(x_new, y_new))
 
         else:
             x_shifts = CRL.tiepoint_grid.to_interpolated_raster(metric='X_SHIFT_M')
@@ -304,7 +304,7 @@ def shifts_to_tif(CRL, outfolder=None, mosaicing=False):
             CRL_tmp = utils.change_resolution_CRL(CRL, backup=CRL_backup)
             x_new = np.linspace(0, y_shifts.shape[1], CRL_tmp.tiepoint_grid.shift.arr.shape[1])
             y_new = np.linspace(0, y_shifts.shape[0], CRL_tmp.tiepoint_grid.shift.arr.shape[0])
-            y_shifts = np.int16(1000 * interp_func(x_new, y_new))
+            y_shifts = np.int16(100 * interp_func(x_new, y_new))
 
         else:
             y_shifts = CRL.tiepoint_grid.to_interpolated_raster(metric='Y_SHIFT_M')
