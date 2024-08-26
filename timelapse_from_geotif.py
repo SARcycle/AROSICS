@@ -68,8 +68,8 @@ def create_timelapse_gif(image_path, extent, output_folder, output_filename):
         # driver = gdal.GetDriverByName('GTiff')
         # dst_ds = driver.CreateCopy(output_file, ds, 0, [x_min_idx, y_max_idx, x_max_idx - x_min_idx, y_min_idx - y_max_idx])
         # dst_ds = None
-        convert_geotiff_to_jpeg(file, f"{i:03d}_resized_1080p.tif",
-                                (x_min_idx, y_max_idx, x_max_idx - x_min_idx, y_min_idx - y_max_idx))
+        convert_geotiff(file, f"{i:03d}_resized_1080p.tif",
+                        (x_min_idx, y_max_idx, x_max_idx - x_min_idx, y_min_idx - y_max_idx))
         resized_images.append(f"{i:03d}_resized_1080p.tif")
 
     # Create the timelapse gif
@@ -82,7 +82,7 @@ def create_timelapse_gif(image_path, extent, output_folder, output_filename):
         os.remove(file)
 
 
-def convert_geotiff_to_jpeg(input_file, output_file, crop_extent):
+def convert_geotiff(input_file, output_file, crop_extent):
     import rasterio
     import numpy as np
     from PIL import Image
@@ -126,57 +126,60 @@ extent_martigny = ((349936, 5107514, 353078, 5109648), 'Martigny')
 extent_geneve = ((274551, 5121786, 277722, 5123897), 'Geneve')
 
 orbit = 'R*'
-date = '*'
 
-if orbit == '*':
-    orbit_name = 'allOrbits'
-else:
-    orbit_name = orbit
-if date == '*':
-    date_name = 'allDates'
-elif '*' in date:
-    date_name = date.replace('*', '')
-else:
-    date_name = date
+for orbit in ['R008', 'R022', 'R065', 'R108', 'R*']:
 
-extent = extent_schoenbuehl
+    date = '*'
 
-image_path = f'/mnt/d/SATROMO/AROSICS_Coregistration/AROSICS/assets/S2/{orbit}/{date}/TiePoint_GridRes_*x*px/S2-L2A-mosaic_*_registration_swiss-10m.tif'
-output_folder = '/home/localadmin/Downloads'
-output_filename = f'timelapse_{extent[1]}_{orbit_name}_{date_name}.mp4'
-create_timelapse_gif(image_path, extent[0], output_folder, output_filename)
+    if orbit == 'R*':
+        orbit_name = 'allOrbits'
+    else:
+        orbit_name = orbit
+    if date == '*':
+        date_name = 'allDates'
+    elif '*' in date:
+        date_name = date.replace('*', '')
+    else:
+        date_name = date
 
-extent = extent_rapperswil
+    extent = extent_schoenbuehl
 
-image_path = f'/mnt/d/SATROMO/AROSICS_Coregistration/AROSICS/assets/S2/{orbit}/{date}/TiePoint_GridRes_*x*px/S2-L2A-mosaic_*_registration_swiss-10m.tif'
-output_folder = '/home/localadmin/Downloads'
-output_filename = f'timelapse_{extent[1]}_{orbit_name}_{date_name}.mp4'
-create_timelapse_gif(image_path, extent[0], output_folder, output_filename)
+    image_path = f'/mnt/d/SATROMO/AROSICS_Coregistration/AROSICS/assets/S2/{orbit}/{date}/TiePoint_GridRes_*x*px/S2-L2A-mosaic_*_registration_swiss-10m.tif'
+    output_folder = '/home/localadmin/Downloads'
+    output_filename = f'timelapse_{extent[1]}_{orbit_name}_{date_name}.mp4'
+    create_timelapse_gif(image_path, extent[0], output_folder, output_filename)
 
-extent = extent_chur
+    extent = extent_rapperswil
 
-image_path = f'/mnt/d/SATROMO/AROSICS_Coregistration/AROSICS/assets/S2/{orbit}/{date}/TiePoint_GridRes_*x*px/S2-L2A-mosaic_*_registration_swiss-10m.tif'
-output_folder = '/home/localadmin/Downloads'
-output_filename = f'timelapse_{extent[1]}_{orbit_name}_{date_name}.mp4'
-create_timelapse_gif(image_path, extent[0], output_folder, output_filename)
+    image_path = f'/mnt/d/SATROMO/AROSICS_Coregistration/AROSICS/assets/S2/{orbit}/{date}/TiePoint_GridRes_*x*px/S2-L2A-mosaic_*_registration_swiss-10m.tif'
+    output_folder = '/home/localadmin/Downloads'
+    output_filename = f'timelapse_{extent[1]}_{orbit_name}_{date_name}.mp4'
+    create_timelapse_gif(image_path, extent[0], output_folder, output_filename)
 
-extent = extent_poschiavo
+    extent = extent_chur
 
-image_path = f'/mnt/d/SATROMO/AROSICS_Coregistration/AROSICS/assets/S2/{orbit}/{date}/TiePoint_GridRes_*x*px/S2-L2A-mosaic_*_registration_swiss-10m.tif'
-output_folder = '/home/localadmin/Downloads'
-output_filename = f'timelapse_{extent[1]}_{orbit_name}_{date_name}.mp4'
-create_timelapse_gif(image_path, extent[0], output_folder, output_filename)
+    image_path = f'/mnt/d/SATROMO/AROSICS_Coregistration/AROSICS/assets/S2/{orbit}/{date}/TiePoint_GridRes_*x*px/S2-L2A-mosaic_*_registration_swiss-10m.tif'
+    output_folder = '/home/localadmin/Downloads'
+    output_filename = f'timelapse_{extent[1]}_{orbit_name}_{date_name}.mp4'
+    create_timelapse_gif(image_path, extent[0], output_folder, output_filename)
 
-extent = extent_martigny
+    extent = extent_poschiavo
 
-image_path = f'/mnt/d/SATROMO/AROSICS_Coregistration/AROSICS/assets/S2/{orbit}/{date}/TiePoint_GridRes_*x*px/S2-L2A-mosaic_*_registration_swiss-10m.tif'
-output_folder = '/home/localadmin/Downloads'
-output_filename = f'timelapse_{extent[1]}_{orbit_name}_{date_name}.mp4'
-create_timelapse_gif(image_path, extent[0], output_folder, output_filename)
+    image_path = f'/mnt/d/SATROMO/AROSICS_Coregistration/AROSICS/assets/S2/{orbit}/{date}/TiePoint_GridRes_*x*px/S2-L2A-mosaic_*_registration_swiss-10m.tif'
+    output_folder = '/home/localadmin/Downloads'
+    output_filename = f'timelapse_{extent[1]}_{orbit_name}_{date_name}.mp4'
+    create_timelapse_gif(image_path, extent[0], output_folder, output_filename)
 
-extent = extent_geneve
+    extent = extent_martigny
 
-image_path = f'/mnt/d/SATROMO/AROSICS_Coregistration/AROSICS/assets/S2/{orbit}/{date}/TiePoint_GridRes_*x*px/S2-L2A-mosaic_*_registration_swiss-10m.tif'
-output_folder = '/home/localadmin/Downloads'
-output_filename = f'timelapse_{extent[1]}_{orbit_name}_{date_name}.mp4'
-create_timelapse_gif(image_path, extent[0], output_folder, output_filename)
+    image_path = f'/mnt/d/SATROMO/AROSICS_Coregistration/AROSICS/assets/S2/{orbit}/{date}/TiePoint_GridRes_*x*px/S2-L2A-mosaic_*_registration_swiss-10m.tif'
+    output_folder = '/home/localadmin/Downloads'
+    output_filename = f'timelapse_{extent[1]}_{orbit_name}_{date_name}.mp4'
+    create_timelapse_gif(image_path, extent[0], output_folder, output_filename)
+
+    extent = extent_geneve
+
+    image_path = f'/mnt/d/SATROMO/AROSICS_Coregistration/AROSICS/assets/S2/{orbit}/{date}/TiePoint_GridRes_*x*px/S2-L2A-mosaic_*_registration_swiss-10m.tif'
+    output_folder = '/home/localadmin/Downloads'
+    output_filename = f'timelapse_{extent[1]}_{orbit_name}_{date_name}.mp4'
+    create_timelapse_gif(image_path, extent[0], output_folder, output_filename)
