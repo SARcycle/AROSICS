@@ -1,3 +1,6 @@
+import re
+from datetime import datetime
+
 import coreg_main
 
 
@@ -209,3 +212,30 @@ def determine_cores(tiles):
         return min(24, os.cpu_count() - 1)
     else:
         return min(int((tiles - 4) / (11 - 4) * (24 - os.cpu_count()) + os.cpu_count()), os.cpu_count() - 1)
+
+
+def parse_date(date_str):
+    """
+    Parse a date string in yyyy-mm-dd, yyyy/mm/dd, or dd.mm.yyyy format.
+
+    Args:
+        date_str (str): The date string to parse.
+
+    Returns:
+        datetime: The parsed date.
+    """
+    patterns = [
+        r"(\d{4})-(\d{2})-(\d{2})",  # yyyy-mm-dd
+        r"(\d{4})/(\d{2})/(\d{2})",  # yyyy/mm/dd
+        r"(\d{2})\.(\d{2})\.(\d{4})",  # dd.mm.yyyy
+        r"(\d{4})(\d{2})(\d{2})",  # yyyymmdd
+    ]
+
+    for pattern in patterns:
+        match = re.match(pattern, date_str)
+        if match:
+            if len(match.groups()) == 3:
+                year, month, day = map(int, match.groups())
+                return datetime(year, month, day)
+
+    raise ValueError("Invalid date format")

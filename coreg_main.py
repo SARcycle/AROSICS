@@ -451,6 +451,7 @@ def coregister_S2(file_path_in, cld_mask_path_in, folder_path_out, cloud_thresho
     else:
         print('\t- Image already coregistered --> Skipping')
 
+    return os.path.join(out_folder, out_name.replace(".tif", "_dx.tif"))
 
 def mosaic_tiles(input_folder, operation, bands):
     """
