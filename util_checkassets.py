@@ -204,7 +204,6 @@ if __name__ == "__main__":
     if initialize_gee_and_drive(credentials_file):
         asset_list = list_assets(collection_path)
         asset_names = [asset['name'] for asset in asset_list]
-        breakpoint()
         source_timestamps = extract_timestamps(data_path, start_date, end_date)
         missing_assets = find_missing_assets(source_timestamps, asset_names)
 
@@ -217,5 +216,5 @@ if __name__ == "__main__":
             # Specify the output CSV file name
             csv_filename = 'missing_asset_numbers.csv'
             export_to_csv(missing_assets, csv_filename)
-            breakpoint()
+       
             print(f'Missing asset  exported to {csv_filename}')
