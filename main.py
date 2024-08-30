@@ -11,7 +11,6 @@ import utils
 
 
 def main():
-    print('Go')
     args = parameters.Parameters()
 
     # Define start and end dates for the data processing
@@ -48,7 +47,7 @@ def main():
             search_result_clean = copernicus_api.clean_search_result(search_result,
                                                                      os.path.join(base_path, base_path_suffix))
 
-            if len(search_result_clean) == 0:
+            if len(search_result) == 0:
                 # Nothing to do as no
                 print('Nothing to do --> continuing')
                 continue

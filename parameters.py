@@ -21,7 +21,6 @@ class Parameters:
         parse.add_argument('-c', '--coregistration', action='store_true', help='Toggle for calculating dx/dy')
 
         args = parse.parse_args()
-        print(args)
         self.__setattr__('start_date', args.start)
         self.__setattr__('end_date', args.end)
         self.__setattr__('upload', args.upload)
