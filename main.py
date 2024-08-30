@@ -48,8 +48,12 @@ def main():
             search_result_clean = copernicus_api.clean_search_result(search_result,
                                                                      os.path.join(base_path, base_path_suffix))
 
+            if len(search_result_clean) == 0:
+                # Nothing to do as no
+                print('Nothing to do --> continuing')
+                continue
+            elif len(search_result_clean) > 0:
             # Download the images if the search result is not empty
-            if len(search_result_clean) > 0:
                 copernicus_api.S2_scene_download(os.path.join(base_path, base_path_suffix),
                                                  search_result=search_result_clean)
 

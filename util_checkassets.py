@@ -82,16 +82,20 @@ Example:
 
     Ensure to update the 'credentials_file' and "data_path" and 'collection_path' variables accordingly.
 """
-import ee
+import csv
+import glob
 import os
 import re
-from datetime import datetime
-import pandas as pd
-from pydrive.auth import GoogleAuth
-from oauth2client.service_account import ServiceAccountCredentials
-import csv
 from datetime import datetime, timedelta
 
+import ee
+from oauth2client.service_account import ServiceAccountCredentials
+from pydrive.auth import GoogleAuth
+
+import utils
+
+# Initialize Earth Engine
+ee.Authenticate()
 
 def initialize_gee_and_drive(credentials_file):
     """
@@ -108,7 +112,7 @@ def initialize_gee_and_drive(credentials_file):
 
     try:
         # Initialize Google Earth Engine
-        ee.Initialize()
+        # ee.Initialize()
 
         # Authenticate with Google Drive
         gauth = GoogleAuth()
@@ -129,6 +133,8 @@ def initialize_gee_and_drive(credentials_file):
 
 # Function to list assets in a collection
 def list_assets(path):
+    # ee.Initialize()
+    ee.Authenticate()
     asset_list = ee.data.listAssets({'parent': path})
     return asset_list.get('assets', [])
 
@@ -139,6 +145,9 @@ def extract_timestamps(directory_path, start_date, end_date):
 
     # Initialize an empty list to store the timestamps
     timestamps = []
+
+    start_date = utils.parse_date(start_date)
+    end_date = utils.parse_date(end_date)
 
     # Loop through all files in the directory
     for file_name in os.listdir(directory_path):
@@ -189,13 +198,13 @@ def export_to_csv(missing_numbers, filename):
 
 if __name__ == "__main__":
     # Path to the service account credentials JSON file
-    credentials_file = r'C:\path\xxx'
+    credentials_file = r'/mnt/c/Users/Localadmin/Documents/SATROMO/AROSICS_Coregistration/AROSICS/secrets/geetest-credentials.secret'
 
     start_date = "2023-10-01"
     end_date = "2023-10-10"
 
     # Specify the originla data path
-    data_path = r'\\path\2023-10'
+    data_path = glob.glob('/mnt/d/SATROMO/AROSICS_Coregistration/AROSICS/assets/S2/R*/*/TiePoint_GridRes_*x*px')
 
     # Specify the collection path
     collection_path = 'projects/satromo-432405/assets/COL_S2_SR_DXDY'
