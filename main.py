@@ -62,6 +62,7 @@ def main():
             # Iterate over the search result dictionary
             for entry in search_result.values():
                 # Add the combination of 'acquisition_date' and 'relative_orbit' to the set
+                # unique_combinations.add((entry['acquisition_date'], entry['relative_orbit'], entry['processing_baseline']))
                 unique_combinations.add((entry['acquisition_date'], entry['relative_orbit']))
 
             # Create a dictionary to store the counts of each combination

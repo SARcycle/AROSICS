@@ -1,5 +1,6 @@
 import hashlib
 import os.path
+import re
 import sys
 from datetime import datetime
 
@@ -75,6 +76,9 @@ def image_search(start_date, end_date):
     rel_orbits = [int(scene_name.split("_")[4].lstrip("R")) for scene_name in scene_names if
                   len(scene_name.split("_")) >= 5]
 
+    # Extracting the Processing Baselines from the search results
+    proc_baseline = [int(re.search(r'N(\d{4})_R', scene_name).group(1)) for scene_name in scene_names]
+
     # Create a dictionary for search results
     search_result = {}
     for i in range(len(ids)):
@@ -84,7 +88,8 @@ def image_search(start_date, end_date):
             "relative_orbit": rel_orbits[i],
             "scene_name": scene_names[i],
             "checksum": checksums[i],
-            "content_length": content_lengths[i]
+            "content_length": content_lengths[i],
+            "processing_baseline": proc_baseline[i]
         }
 
     return search_result
@@ -256,13 +261,14 @@ def S2_scene_download(base_path, start_date=None, end_date=None, search_result=N
     #     print("\n".join([f'\t- Download statistics',f'\t\t- Successful: {dl_stats[0]}',f'\t\t- Failed: {dl_stats[1]}']))
 
 
-def clean_search_result(search_result, base_path):
+def clean_search_result(search_result, base_path, proc_baseline=None):
     """
     Cleans the search result by removing already downloaded tiles.
 
     Args:
         search_result (dict): The search result containing the scene information.
         base_path (str): The base path to check for already downloaded tiles.
+        proc_baseline (int): Processing baseline to be used (newest if no processing baseline is given
 
     Returns:
         dict: The cleaned search result.
@@ -271,6 +277,14 @@ def clean_search_result(search_result, base_path):
     # Create a copy of the search result
     search_result_clean = search_result.copy()
 
+    # Extracting desired processing baselines
+    # if type(proc_baseline) in (int, float):
+    #    desired_baseline = proc_baseline
+    # else: # If default value or invalid entry
+    #    desired_baseline = max(entry['processing_baseline'] for entry in search_result_clean.values())
+
+    # search_result_clean = {key: value for key, value in search_result_clean.items() if value['processing_baseline'] == desired_baseline}
+
     # Determine the tile string (singular or plural)
     if len(search_result_clean) == 1:
         tile_str = 'tile'
@@ -278,6 +292,7 @@ def clean_search_result(search_result, base_path):
         tile_str = 'tiles'
 
     # Print the number of available tiles
+    #print(f'\t\t- {len(search_result_clean)} {tile_str} available with processing baseline of {desired_baseline/100:05.2f}')
     print(f'\t\t- {len(search_result_clean)} {tile_str} available')
 
     # Initialize a list to store the already downloaded tiles
@@ -296,6 +311,7 @@ def clean_search_result(search_result, base_path):
             tiles_present.append(key)
 
     # Print the number of already downloaded tiles
+    #print(f'\t\t- {len(tiles_present)} {tile_str} already downloaded with processing baseline of {desired_baseline/100:05.2f}')
     print(f'\t\t- {len(tiles_present)} {tile_str} already downloaded')
 
     # Remove the already downloaded tiles from the search result

@@ -35,7 +35,7 @@ class Parameters:
                 assert False, f'{e}'
         else:
             self.__setattr__('start_date',
-                             (datetime.datetime.now() - datetime.timedelta(days=5)).replace(hour=0, minute=0, second=0,
+                             (datetime.datetime.now() - datetime.timedelta(days=7)).replace(hour=0, minute=0, second=0,
                                                                                             microsecond=0))
 
         if self.end_date is not None:

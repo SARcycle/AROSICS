@@ -225,6 +225,7 @@ def parse_date(date_str):
         datetime: The parsed date.
     """
     patterns = [
+        r"(\d{4})-(\d{2})-(\d{2})T(\d{2})(\d{2})(\d{2})",  # yyyymmdd
         r"(\d{4})-(\d{2})-(\d{2})",  # yyyy-mm-dd
         r"(\d{4})/(\d{2})/(\d{2})",  # yyyy/mm/dd
         r"(\d{2})\.(\d{2})\.(\d{4})",  # dd.mm.yyyy
@@ -237,5 +238,8 @@ def parse_date(date_str):
             if len(match.groups()) == 3:
                 year, month, day = map(int, match.groups())
                 return datetime(year, month, day)
+            if len(match.groups()) == 6:
+                year, month, day, hour, minute, second = map(int, match.groups())
+                return datetime(year, month, day, hour, minute, second)
 
     raise ValueError("Invalid date format")

@@ -89,6 +89,7 @@ import re
 from datetime import datetime, timedelta
 
 import ee
+import json
 from oauth2client.service_account import ServiceAccountCredentials
 from pydrive.auth import GoogleAuth
 
@@ -112,15 +113,25 @@ def initialize_gee_and_drive(credentials_file):
 
     try:
         # Initialize Google Earth Engine
-        # ee.Initialize()
+
+        with open(credentials_file, "r") as f:
+            data = json.load(f)
 
         # Authenticate with Google Drive
         gauth = GoogleAuth()
         gauth.service_account_file = credentials_file
+        gauth.service_account_email = data["client_email"]
+
         gauth.credentials = ServiceAccountCredentials.from_json_keyfile_name(
             gauth.service_account_file, scopes=scopes
         )
         gauth.ServiceAuth()
+
+        # Initialize Google Earth Engine
+        credentials = ee.ServiceAccountCredentials(
+            gauth.service_account_email, gauth.service_account_file
+        )
+        ee.Initialize(credentials)
 
         print("Google Earth Engine and Google Drive authentication successful.")
         return True
@@ -150,14 +161,16 @@ def extract_timestamps(directory_path, start_date, end_date):
     end_date = utils.parse_date(end_date)
 
     # Loop through all files in the directory
-    for file_name in os.listdir(directory_path):
-        # Check if the file ends with '10m_dx.tif'
-        if file_name.endswith('10m_dx.tif'):
-            # Retrieve the date from the filename using regex
-            match = re.search(r'(\d{4}-\d{2}-\d{2}T\d{6})', file_name)
-            if match:
-                timestamp = match.group(0).upper()
-                timestamps.append(timestamp)
+    for folder in directory_path:
+        for file_name in os.listdir(folder):
+            # Check if the file ends with '10m_dx.tif'
+            if file_name.endswith('10m_dx.tif'):
+                # Retrieve the date from the filename using regex
+                match = re.search(r'(\d{4}-\d{2}-\d{2}T\d{6})', file_name)
+                date = utils.parse_date(match.group())
+                if match and date >= start_date and date <= end_date:
+                    timestamp = match.group(0).upper()
+                    timestamps.append(timestamp)
     return timestamps
 
 # Function to determine missing numbers between 1 and 365
@@ -200,11 +213,12 @@ if __name__ == "__main__":
     # Path to the service account credentials JSON file
     credentials_file = r'/mnt/c/Users/Localadmin/Documents/SATROMO/AROSICS_Coregistration/AROSICS/secrets/geetest-credentials.secret'
 
-    start_date = "2023-10-01"
-    end_date = "2023-10-10"
+    start_date = "2017-01-01"
+    end_date = "2024-12-31"
 
     # Specify the originla data path
-    data_path = glob.glob('/mnt/d/SATROMO/AROSICS_Coregistration/AROSICS/assets/S2/R*/*/TiePoint_GridRes_*x*px')
+    print('Listing files on hard drive')
+    data_path = '/mnt/d/SATROMO/AROSICS_Coregistration/AROSICS/assets/S2'
 
     # Specify the collection path
     collection_path = 'projects/satromo-432405/assets/COL_S2_SR_DXDY'
@@ -213,12 +227,13 @@ if __name__ == "__main__":
     if initialize_gee_and_drive(credentials_file):
         asset_list = list_assets(collection_path)
         asset_names = [asset['name'] for asset in asset_list]
-        source_timestamps = extract_timestamps(data_path, start_date, end_date)
+        source_timestamps = extract_timestamps(glob.glob(os.path.join(data_path, 'R*/*/TiePoint_GridRes_*x*px')),
+                                               start_date, end_date)
         missing_assets = find_missing_assets(source_timestamps, asset_names)
 
         # Check if missing_assets is empty
         if not missing_assets:
-            print("OK sync for "+start_date+" to "+end_date +
+            print("OK sync for " + start_date + " to " + end_date +
                   " for "+data_path+" and "+collection_path)
         else:
             print("NOT OK: Missing assets:", missing_assets)
