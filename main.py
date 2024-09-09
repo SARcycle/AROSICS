@@ -36,7 +36,7 @@ def main():
         try:
             start = time.time()
             # Print a header for the current date
-            str = f'{date.strftime("%Y-%m-%d %H:%M:%S")} - {(date + datetime.timedelta(days=1) - datetime.timedelta(seconds=1)).strftime("%Y-%m-%d %H:%M:%S")}'
+            str = f'{date.strftime("%Y/%m/%d %H:%M:%S")} - {(date + datetime.timedelta(days=1) - datetime.timedelta(seconds=1)).strftime("%Y/%m/%d %H:%M:%S")}'
             print("=" * len(str))
             print(str)
             print("-" * len(str))

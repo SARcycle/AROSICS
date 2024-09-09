@@ -56,7 +56,7 @@ def image_search(start_date, end_date):
     # Extract relevant information
     ids = [d["Id"] for d in json["value"] if "Id" in d and proc_lvl in d.get("Name", "")]
     acquisition_dates = [
-        datetime.strptime(d["ContentDate"]["Start"], "%Y-%m-%dT%H:%M:%S.%fZ")
+        datetime.strptime(d["ContentDate"]["Start"], "%Y-%m-%dT%H:%M:%S.%fZ").replace(microsecond=0)
         for d in json["value"]
         if "ContentDate" in d and proc_lvl in d.get("Name", "")
     ]
