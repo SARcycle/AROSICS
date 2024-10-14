@@ -1,5 +1,5 @@
 #!/bin/bash
-INSTALLDIR=/home/localadmin/.venv/arosicspy_test
+INSTALLDIR=/home/localadmin/.venv/arosicspy
 sudo add-apt-repository -y ppa:deadsnakes/ppa
 sudo snap refresh
 sudo apt update -y
