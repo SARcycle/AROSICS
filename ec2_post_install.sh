@@ -34,7 +34,8 @@ mkdir -p assets/S2
 
 # Installing SARCyle AROSICS installer
 echo "Installing SARCyle AROSICS installer..."
-sudo bash AROSICS/install_requirements.sh
+sudo chmod +x AROSICS/install_requirements.sh
+sudo ./AROSICS/install_requirements.sh
 
 # Setting paths
 echo "Setting paths..."
@@ -55,13 +56,13 @@ sed -i 's|wait_for_upload = True|wait_for_upload = False|g' /home/ubuntu/AROSICS
 
 # Installing Python 3.10 venv and modules
 echo "Installing python3.10 venv and modules..."
-python3.10 -m venv .venv
-source .venv/bin/activate
-pip install --upgrade pip
-pip install -r AROSICS/requirements.txt
-pip install earthengine-api
-pip install oauth2client
-pip install pydrive
+#python3.10 -m venv .venv
+#source /home/localadmin/.venv/arosicspy/bin/activate
+sudo /home/localadmin/.venv/arosicspy/bin/pip install --upgrade pip
+sudo /home/localadmin/.venv/arosicspy/bin/pip install -r AROSICS/requirements.txt
+sudo /home/localadmin/.venv/arosicspy/bin/pip install earthengine-api
+sudo /home/localadmin/.venv/arosicspy/bin/pip install oauth2client
+sudo /home/localadmin/.venv/arosicspy/bin/pip install pydrive
 
 # Final instructions
 echo "Next step:"
