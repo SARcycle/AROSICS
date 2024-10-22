@@ -44,6 +44,14 @@ sed -i 's|/mnt/d/SATROMO/AROSICS_Coregistration/AROSICS/assets/S2|/home/ubuntu/a
 sed -i 's|/mnt/d/SATROMO/AROSICS_Coregistration/AROSICS/assets/base_data/log.json|/home/ubuntu/base_data/log.json|g' /home/ubuntu/AROSICS/logger.py
 sed -i 's|/mnt/d/SATROMO/AROSICS_Coregistration/AROSICS/assets/base_data/credentials.json|/home/ubuntu/base_data/credentials.json|g' /home/ubuntu/AROSICS/utils.py
 sed -i 's|/mnt/d/SATROMO/AROSICS_Coregistration/AROSICS/assets/|/home/ubuntu/assets/|g' /home/ubuntu/AROSICS/main.py
+sed -i 's|/mnt/c/Users/Localadmin/Documents/SATROMO/AROSICS_Coregistration/AROSICS/secrets/geetest-credentials.secret|/home/ubuntu/base_data/satromo-432405-e269832fc38b.secrets|g' /home/ubuntu/AROSICS/util_upload_dxdy.py
+sed -i 's|/mnt/c/Users/Localadmin/Documents/SATROMO/AROSICS_Coregistration/AROSICS/secrets/geetest-credentials.secret|/home/ubuntu/base_data/satromo-432405-e269832fc38b.secrets|g' /home/ubuntu/AROSICS/util_checkassets.py
+
+# Removing the wait for the upload
+sed -i 's|wait_for_upload = True|wait_for_upload = False|g' /home/ubuntu/AROSICS/util_upload_dxdy.py
+
+
+
 
 # Installing Python 3.10 venv and modules
 echo "Installing python3.10 venv and modules..."
