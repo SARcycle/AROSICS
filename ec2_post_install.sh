@@ -51,7 +51,8 @@ sed -i 's|/mnt/c/Users/Localadmin/Documents/SATROMO/AROSICS_Coregistration/AROSI
 # Removing the wait for the upload
 sed -i 's|wait_for_upload = True|wait_for_upload = False|g' /home/ubuntu/AROSICS/util_upload_dxdy.py
 
-
+# make delete files exec
+sudo chmod +x AROSICS/delete_files.sh
 
 
 # Installing Python 3.10 venv and modules
