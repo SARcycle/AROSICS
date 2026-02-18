@@ -63,6 +63,10 @@ def image_search(start_date, end_date):
     scene_names = [
         d["Name"] for d in json["value"] if "Name" in d and proc_lvl in d.get("Name", "")
     ]
+
+    # Extracting the Satellite ID from the scene names (e.g., S2A, S2B, S2C)
+    satellite_id = [scene.split('_')[0] for scene in scene_names]
+
     # Returns Checksum (if present), otherwise False (applies for products before 2023)
     checksums = [
         d["Checksum"][0].get("Value", False) if "Checksum" in d and d["Checksum"] else False
@@ -89,7 +93,8 @@ def image_search(start_date, end_date):
             "scene_name": scene_names[i],
             "checksum": checksums[i],
             "content_length": content_lengths[i],
-            "processing_baseline": proc_baseline[i]
+            "processing_baseline": proc_baseline[i],
+            "satellite_id": satellite_id[i]
         }
 
     return search_result
@@ -277,6 +282,38 @@ def clean_search_result(search_result, base_path, proc_baseline=None):
     # Create a copy of the search result
     search_result_clean = search_result.copy()
 
+    # Exclude older sensors for the same date (day) and orbit
+    # Find the newest satellite_id per (date, orbit) group
+    newest_satellite = {}
+    for key, value in search_result_clean.items():
+        group = (value['acquisition_date'].date(), value['relative_orbit'])
+        sat = value['satellite_id']  # e.g. 'S2A', 'S2B', 'S2C'
+        if group not in newest_satellite or sat > newest_satellite[group]:
+            newest_satellite[group] = sat
+
+    # Remove entries whose satellite_id is not the best for their group
+    keys_to_remove = [
+        key for key, value in search_result_clean.items()
+        if value['satellite_id'] < newest_satellite[(value['acquisition_date'].date(), value['relative_orbit'])]
+    ]
+
+    # Collect culled satellites per group for the summary message
+    culled_per_group = {}
+    for key in keys_to_remove:
+        value = search_result_clean[key]
+        group = (value['acquisition_date'].date(), value['relative_orbit'])
+        culled_per_group.setdefault(group, set()).add(value['satellite_id'])
+
+    for key in keys_to_remove:
+        search_result_clean.pop(key)
+
+    if keys_to_remove:
+        summary = '; '.join(
+            f'{newest_satellite[group]} kept over {", ".join(sorted(culled_sats))}'
+            for group, culled_sats in culled_per_group.items()
+        )
+        print(f'\t\t- {len(keys_to_remove)} {"tile" if len(keys_to_remove) == 1 else "tiles"} culled due to multiple sensors for same date and orbit ({summary})')
+    
     # Extracting desired processing baselines
     # if type(proc_baseline) in (int, float):
     #    desired_baseline = proc_baseline
@@ -286,10 +323,7 @@ def clean_search_result(search_result, base_path, proc_baseline=None):
     # search_result_clean = {key: value for key, value in search_result_clean.items() if value['processing_baseline'] == desired_baseline}
 
     # Determine the tile string (singular or plural)
-    if len(search_result_clean) == 1:
-        tile_str = 'tile'
-    else:
-        tile_str = 'tiles'
+    tile_str = 'tile' if len(search_result_clean) == 1 else 'tiles'
 
     # Print the number of available tiles
     #print(f'\t\t- {len(search_result_clean)} {tile_str} available with processing baseline of {desired_baseline/100:05.2f}')

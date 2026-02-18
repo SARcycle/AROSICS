@@ -84,7 +84,7 @@ def S2_mosaic_scenes(base_path, acquisition_date, rel_orbit):
         # Create a VRT file for the cloud files
         print(f'\t- Creating vrt ({os.path.basename(cld_path_out)}.vrt)')
         os.system(
-            f'gdalbuildvrt -q -allow_projection_difference -q -srcnodata 0 {cld_path_out}.vrt {" ".join(files_present_cld_utm32)}')
+            f'gdalbuildvrt -q -allow_projection_difference -srcnodata 0 {cld_path_out}.vrt {" ".join(files_present_cld_utm32)}')
 
         ## Mosaic the cloud files using GDALWARP
         # print(f'\t- Mosaiking ({os.path.basename(cld_path_out)}.tif)')
@@ -372,7 +372,8 @@ def coregister_S2(file_path_in, cld_mask_path_in, folder_path_out, cloud_thresho
     if not os.path.exists(os.path.join(out_folder, out_folder)) or not os.path.exists(
             os.path.join(out_folder, out_name.replace(".tif", ".shp"))) or not os.path.exists(
         os.path.join(out_folder, out_name.replace(".tif", "_dx.tif"))) or not os.path.exists(
-        os.path.join(out_folder, out_name.replace(".tif", "_dy.tif"))):
+        os.path.join(out_folder, out_name.replace(".tif", "_dy.tif"))) or not os.path.exists(
+        os.path.join(out_folder, out_name)):
 
         # Convert cloud probability to cloud mask
         if os.path.exists(cld_mask_path_out):
@@ -434,6 +435,7 @@ def coregister_S2(file_path_in, cld_mask_path_in, folder_path_out, cloud_thresho
             'CPUs': num_cpus,
             'progress': False,
             'nodata': [0, 0],
+            'fmt_out': 'GTIFF',
         }
 
         # Perform coregistration
