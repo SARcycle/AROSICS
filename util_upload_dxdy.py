@@ -108,12 +108,12 @@ def determine_run_type():
     return run_type, storage_client
 
 
-def upload_dx_dy_mosaic_for_single_date_from_terminal(day_to_process: str, collection: str) -> None:
+def upload_dx_dy_mosaic_for_single_date_from_terminal(day_to_process: str, collection: str, relative_orbit: int) -> None:
     # Call the function with the appropriate day_to_process value
-    upload_dx_dy_mosaic_for_single_date(day_to_process, collection)
+    upload_dx_dy_mosaic_for_single_date(day_to_process, collection, relative_orbit)
 
 
-def upload_dx_dy_mosaic_for_single_date(day_to_process: str, collection: str) -> None:
+def upload_dx_dy_mosaic_for_single_date(day_to_process: str, collection: str, relative_orbit: int) -> None:
     """
     upload a dX dy  mosaic for a single date to Google Cloud Storage and Google Earth Engine.
 
@@ -225,6 +225,8 @@ def upload_dx_dy_mosaic_for_single_date(day_to_process: str, collection: str) ->
         'system:name': asset_name + ".tif",
         # Set the date
         'date': timestamp,
+        # Set the relative orbit
+        'SENSING_ORBIT_NUMBER': relative_orbit,
         # Method
         'method': "AROSICS",
         # Version
@@ -232,7 +234,7 @@ def upload_dx_dy_mosaic_for_single_date(day_to_process: str, collection: str) ->
         # Arosics orig_name X
         'orig_file_dx': file_name,
         # Arosics orig_name Y
-        'orig_file_dy': file_name.replace('_dx', '_dy'),
+        'orig_file_dy': file_name.replace('_dx', '_dy')
     })
 
     # Check if the asset already exists

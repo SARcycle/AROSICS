@@ -291,7 +291,7 @@ def clean_search_result(search_result, base_path, proc_baseline=None):
         if group not in newest_satellite or sat > newest_satellite[group]:
             newest_satellite[group] = sat
 
-    # Remove entries whose satellite_id is not the best for their group
+    # Remove entries whose satellite_id is not the newest in their group
     keys_to_remove = [
         key for key, value in search_result_clean.items()
         if value['satellite_id'] < newest_satellite[(value['acquisition_date'].date(), value['relative_orbit'])]

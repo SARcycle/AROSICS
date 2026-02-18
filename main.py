@@ -148,12 +148,12 @@ def main():
                                                                        f'{acquisition_date.strftime("%Y%m%d")}'),
                                                                    cloud_threshold=65,
                                                                    mosaicing=mosaicing)
-            print(
-                f'Total processing time for {datetime.datetime.strftime(date, "%Y/%m/%d")}: {datetime.timedelta(seconds=round(time.time() - start))}')
+                print(
+                    f'Total processing time for {datetime.datetime.strftime(date, "%Y/%m/%d")}: {datetime.timedelta(seconds=round(time.time() - start))}')
 
-            if args.upload:
-                collection = "projects/satromo-432405/assets/COL_S2_SR_DXDY"
-                util_upload_dxdy.upload_dx_dy_mosaic_for_single_date_from_terminal(out_path_dx, collection)
+                if args.upload:
+                    collection = "projects/satromo-432405/assets/COL_S2_SR_DXDY"
+                    util_upload_dxdy.upload_dx_dy_mosaic_for_single_date_from_terminal(out_path_dx, collection, int(relative_orbit))
 
         except Exception as e:
             print(e)
