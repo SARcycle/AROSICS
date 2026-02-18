@@ -1,1 +1,6 @@
 /secrets/geetest-credentials.secret
+test.py
+.idea/
+__pychache__/
+__pycache__/*.pyc
+launch.json
